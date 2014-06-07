@@ -1,0 +1,21 @@
+import(methods,
+       Rsamtools,
+       Biostrings,
+       reshape,
+       ggplot2,
+       RColorBrewer
+       )
+
+exportClasses(
+    "logicalORmissing"
+    )
+
+exportMethods("plotPP",
+              "plotDistro",
+              "plotFreq",
+              "plotRegion",
+              "readBam",
+              "pingpong",
+              "ntfreq",
+              "getCountMatrix"
+              )

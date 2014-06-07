@@ -1,0 +1,171 @@
+\documentclass[english]{article}
+%\VignetteEngine{knitr}
+%\VignetteIndexEntry{ssviz}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{verbose,lmargin=3cm,rmargin=3cm,tmargin=3cm,bmargin=3cm}
+\usepackage{babel,hyperref}
+\begin{document}
+
+\title{ssviz: A small RNA-seq visualizer and analysis toolkit}
+\author{Diana HP Low\\ \\ Institute of Molecular and Cell Biology\\ 
+Agency for Science, Technology and Research (A*STAR), Singapore
+\\ dlow@imcb.a-star.edu.sg
+}
+\maketitle
+\tableofcontents{}
+\section{Introduction}
+Small RNA sequencing enables the discovery and profiling of microRNAs, piRNAs and other non-coding RNA for any organism, even without prior genome annotation. The \emph{ssviz} package is intended firstly as a visual aid, and secondly to provide more specialized analysis catering for either miRNA or piRNA analysis.
+
+\subsection{A typical small RNA sequencing analysis}
+To understand the workings and conventions of this package, Figure 1 outlines a typical workflow for a small RNA sequencing run. Here it is assumed that the data is produced on the Illumina platform, either GAIIx or HiSeq 2000. 
+
+First, pre-processing on the raw reads is done with tools like \href{http://hannonlab.cshl.edu/fastx_toolkit}{fastx-toolkit}. Small RNA reads are typically shorter than the high-throughput sequencing length, so there is a need for adapter trimming and removal of adapter contaminants. Also, as reads are often repeated, it is thus favourable to collapse identical sequences into a single read (but keeping note of the total number of reads).  Based on \texttt{fastx-toolkit}, collapsed read names are in the form of \texttt{readname-readcount}. This point is crucial as \texttt{ssviz} will take into account this naming convention in plots and computations.
+
+After pre-processing, reads are then mapped to list of contaminants (snoRNA, snRNA, tRNA, etc) and then either to the genome and small RNA databases (eg. miRBank, RepBase, piRNABank) or both. Once mapped, tools like \texttt{ssviz} can be used to analyze the resulting data.
+
+\begin{figure}[!htb]
+\begin{center}
+\includegraphics[width=4in]{workflow}
+\caption{A typical small RNA sequencing workflow}
+\end{center}
+\end{figure}
+
+\section{Installing and loading the ssviz package}
+We recommend that users install the package via Bioconductor, since this will automatically detect and install all required dependencies. The Bioconductor installation procedure is described at \href{http://www.bioconductor.org/docs/install/}{http://www.bioconductor.org/docs/install/}. To install \emph{ssviz}, launch a new R session, and in a command terminal either type or copy/paste:
+<<eval=FALSE>>=
+source("http://www.bioconductor.org/biocLite.R")
+biocLite("ssviz")
+@
+\clearpage
+\section{Using \emph{ssviz}}
+\subsection{Loading the \emph{ssviz} package}
+To load the \emph{ssviz} package in the R environment, simply type:-
+<<loadingPackage,message=FALSE>>=
+library(ssviz)
+@
+
+The \emph{ssviz} package also includes all the data generated in this vignette for easy reference. Data can be loaded by typing:
+<<loaddata>>=
+data(ssviz)
+@
+
+\subsection{Reading bam files}
+\emph{ssviz} analyzes bam files that have been mapped either to a genome or to small RNA seq annotations. Bam files can be loaded into the workspace using \texttt{readBam}. The package comes with two example datasets (control and treatment). readBam is a wrapper for the scanBam function and writes the bam file contents into a convenient data frame. For more information, please refer to the Rsamtools package.
+
+<<loading-bam,tidy=TRUE,warning=FALSE>>=
+bam.files<-dir(system.file("extdata", package="ssviz"), full=TRUE, patt="bam$")
+ctrlbam<-readBam(bam.files[1])
+treatbam<-readBam(bam.files[2])
+@
+
+Firstly, we can view the contents of the bam file, by simply typing the name of the object, for example \texttt{ctrlbam}.
+<<viewobject>>=
+ctrlbam
+@
+
+\subsection{Read counts in small RNA sequencing}
+As mentioned above, raw reads files are usually collapsed before mapping, but the counts are retrievable. If you have used \texttt{fastx-toolkit}:
+<<gettingReadCounts,warning=FALSE>>=
+ctrl.count<-getCountMatrix(ctrlbam)
+treat.count<-getCountMatrix(treatbam)
+@
+a \texttt{counts} column will now be appended to the DataFrame.
+<<gettingReadCounts2,warning=FALSE>>=
+ctrl.count[1,]
+@
+
+\subsection{Plotting bam properties}
+ssviz has a few plot functions - the most basic is to plot the general distribution in the bam file based on their properties. For small RNA sequencing in particular, it is important to know the lengths of the reads (representing the lengths of the small RNA), direction (strand in sequencing) and perhaps region (eg. chromosome or RNA element). For example, microRNAs are typically 18-24nt in length, whereas piRNAs are longer, around 24-32 nt in length (Ruvkun 2001, Brennecke 2007, Thomson 2009).
+
+When comparing two or more datasets, it is crucial that the datasets are normalized properly, and this includes having information on (i) total number of counts for the same reads, and (ii) the overall number of reads that was mapped, to make sure than the comparisons are on the same scale. Part (i) can be obtained directly from the loaded bam DataFrame (if \texttt{fastx-toolkit} was used). Part (ii) can be obtained as an output of the mapper, eg. \texttt{bowtie}. Typically this number would represent total number of reads sequenced, or mappable to the broadest encompassing index (the genome).
+
+In the bam file, read length is represented by \texttt{qwidth}, direction by \texttt{strand} and region by \texttt{rname} and \texttt{pos}. For example, to plot the read length distribution (Figure 2):
+<<plotdistro1,tidy=TRUE,eval=FALSE>>=
+plotDistro(list(ctrl.count), type="qwidth", samplenames=c("Control"), ncounts=counts[1])
+@
+\begin{figure}[!htb]
+\begin{center}
+\includegraphics[width=4.5in]{plotdistro1}
+\caption{plotDistro with a single dataset}
+\end{center}
+\end{figure}
+
+
+To compare two or more datasets, simply include them in the list (Figure 3).
+<<plotdistro2,tidy=TRUE,eval=FALSE,warning=FALSE>>=
+plotDistro(list(ctrl.count, treat.count), type="qwidth", samplenames=c("Control","Treatment"), ncounts=counts)
+@
+\begin{figure}[!htb]
+\begin{center}
+\includegraphics[width=4.5in]{plotdistro2}
+\caption{plotDistro with two datasets}
+\end{center}
+\end{figure}
+
+
+\clearpage
+\subsection{Plotting region density}
+<<regiondens,eval=FALSE>>=
+region<-'chr1:3015526-3080526'
+plotRegion(list(ctrl.count), region=region)
+@
+
+\begin{figure}[!htb]
+\begin{center}
+\includegraphics[width=4.5in]{plotregion}
+\caption{plotRegion}
+\end{center}
+\end{figure}
+
+\subsection{piRNA ping-pong analysis}
+PIWI-interacting RNAs (piRNAs) are 23-30-nucleotide-long small RNAs that act as sequence-specific silencers of transposable elements in animal gonads (Kawaoka 2011). The ping-pong mechanism is a proposed method for the amplification of primary Piwi-associated RNAs (piRNAs), which leads to the production of new primary piRNAs from their precursor transcripts, which eventually amplifies the pool of both primary and secondary piRNAs (Brennecke 2007). This positive feedback loop is a secondary biogenesis mechanism that requires complementary transcripts to a pre-existing pool of piRNAs.
+
+Piwi proteins retain the endoribonuclease or Slicer activity that allows them to cleave targets between position 10 and position 11 of their bound piRNA. This cleavage defines the 5' end of a secondary piRNA that is generated from the transposon transcript. Because a very high proportion of piRNAs have a uridine (U) at the first position and because the complementarity between piRNAs and targets is expected to be nearly perfect, secondary piRNAs typically have adenosines at position 10, which base-pairs with the U at the first position of the piRNA. This is reflected as a sharp peak at 10nts when frequency is plotted against overlap length, and also can be seen in the nucleotide frequency plot in the next section.
+
+To compute the overlaps between the sense and anti-sense (amplified) piRNAs, we leverage on the positional information contained in the bam file of "+" strand reads and "-" strand reads, calculates and plots the frequency of overlap (up to the length of the read). 
+
+<<pingpong,eval=FALSE>>=
+pp.ctrl<-pingpong(pctrlbam.count)
+plotPP(list(pp.ctrl), samplenames=c("Control"))
+@ 
+\begin{figure}[!htb]
+\begin{center}
+\includegraphics[width=4.5in]{pingpong}
+\caption{plotPP}
+\end{center}
+\end{figure}
+
+\subsection{Computing nucleotide frequency (composition)}
+A known property of primary piRNA is a marked 5-prime uridine bias (Brennecke 2007). The \texttt{ntfreq} function allows the user to compute the frequency of nucleotides over a chosen length.
+<<ntfreq,eval=FALSE>>=
+pctrlbam.count<-getCountMatrix(pctrlbam)
+freq.ctrl<-ntfreq(pctrlbam.count, ntlength=10)
+plotFreq(freq.ctrl)
+@
+
+\begin{figure}[!htb]
+\begin{center}
+\includegraphics[width=4.5in]{plotfreq}
+\caption{plotFreq}
+\end{center}
+\end{figure}
+
+\section{Further work}
+It is the hope that with feedback from the community, \texttt{ssviz} would further develop to support and improve the multi-faceted analysis in small RNA sequencing including miRNA target identification and novel RNA discovery. As such, output and working data formats have been kept to the convention most widely utilized for sequencing analysis in R to ensure and enhance cross-compatibility and usage.
+
+\clearpage
+\addcontentsline{toc}{section}{References}
+\begin{thebibliography}{9}
+\bibitem{fastxtoolkit} FASTX-Toolkit: FASTQ/A short-reads pre-processing tools
+\bibitem{Ruvkun2001} Ruvkun, G. Molecular Biology: Glimpses of a Tiny RNA World. Science 2001, 294, 797-799.
+\bibitem{Brennecke2007} Brennecke J, Aravin AA, Stark A, Dus M, Kellis M, Sachidanandam R, Hannon GJ. Discrete small RNA-generating loci as master regulators of transposon activity in Drosophila. Cell. 2007;128:1089-1103.
+\bibitem{Thomson2009} Thomson T, Lin H. The biogenesis and function of PIWI proteins and piRNAs: progress and prospect. Annu. Rev. Cell. Dev. Biol. 2009;25:355-376.
+\bibitem{Kawaoka2011} Shinpei Kawaoka, Yuji Arai, Koji Kadota, et al. Zygotic amplification of secondary piRNAs during silkworm embryogenesis RNA (2011), 17:00-00
+\end{thebibliography}
+<<>>=
+sessionInfo()
+@
+
+
+\end{document}

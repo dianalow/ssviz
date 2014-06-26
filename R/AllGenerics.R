@@ -29,19 +29,23 @@ setMethod("readBam",signature=c(file_name="character"),
           })
 
 setGeneric("getCountMatrix",
-           function(bam_file){
+           function(bam_file,pseudo=FALSE){
              standardGeneric("getCountMatrix")
            })
 
 setMethod("getCountMatrix",signature=c(bam_file="DataFrame"),
-          definition=function(bam_file){
+          definition=function(bam_file,pseudo=FALSE){
             # returns the bam data.frame with an additional column counts
             # only relevant if the fasta file used for mapping input was previously collapsed via fastx_toolkit
             # to return a fasta read name in the format of : readnumber-totalcounts
-            # TODO : need to check if there is a count
-            bsplit<-data.frame(matrix(unlist(strsplit(bam_file$qname,"-")),ncol=2,byrow=TRUE))
-            colnames(bsplit)<-c("readname","counts")
-            counts<-as.numeric(as.character(bsplit$counts))
+            # pseudo option adds "1" as count
+            if(pseudo){
+              counts<-1
+            } else {
+              bsplit<-data.frame(matrix(unlist(strsplit(bam_file$qname,"-")),ncol=2,byrow=TRUE))
+              colnames(bsplit)<-c("readname","counts")
+              counts<-as.numeric(as.character(bsplit$counts))
+            }
             #bam1<-cbind(bam_file,DataFrame(counts))
             bam1<-bam_file
             bam1$counts<-counts
@@ -81,7 +85,8 @@ setMethod("ntfreq",signature=c(bam_file="DataFrame",ntlength="numeric"),
             b1<-unique(bam_file[c("qname","strand","seq","counts")]) # to remove multimapped
             #b1<-getCountMatrix(b0)
             
-            if(count_type=="unique") {b1$counts<-1 #easy-out for same workflow
+            if(count_type=="unique") {
+              b1$counts<-1 #easy-out for same workflow
             }
             
             b1.ss<-cbind(b1[b1$strand=='+',]$counts,sapply(as.list(b1[b1$strand=='+',]$seq),toString))
@@ -131,20 +136,20 @@ setMethod("pingpong",signature=c(bam_file="DataFrame"),
             neg_reads<-bam_file[bam_file$strand=="-",]
             maxposlength<-max(pos_reads$qwidth)
             listrnames<-suppressWarnings(as.character(unique(bam_file$rname)))
-            cat("Checking rnames: ")
-            cat(listrnames)
+            message("Checking rnames: ")
+            message(listrnames)
             
             for(k in c(1:length(listrnames))){
-              cat(paste('\n\n',listrnames[k],'\n***************\n',sep=""))
+              message(paste('\n\n',listrnames[k],'\n***************\n',sep=""))
               pr<-pos_reads[pos_reads$rname==listrnames[k],]
               nr<-neg_reads[neg_reads$rname==listrnames[k],]
-              cat(paste("Unique forward reads:",nrow(pr),', reverse reads:',nrow(nr),'\n'))
+              message(paste("Unique forward reads:",nrow(pr),', reverse reads:',nrow(nr),'\n'))
               if(nrow(pr))
                 toiterate<-round_any(nrow(pr)/10,10,f=floor)
               if(toiterate==0) toiterate<-1
               for(i in 1:nrow(pr)){
                 if(substr(sapply(as.list(pr[i,]$seq),toString),1,1)!="T") next
-                if(i%%toiterate==1) cat(paste("Forward read #",i,'out of',nrow(pr),"\n"))
+                if(i%%toiterate==1) message(paste("Forward read #",i,'out of',nrow(pr),"\n"))
                 locationp<-pr[i,]$pos
                 nr1<-nr[nr$pos<=(locationp) & nr$pos>=(locationp-maxposlength),]
                 if(nrow(nr1)!=0){
@@ -159,7 +164,7 @@ setMethod("pingpong",signature=c(bam_file="DataFrame"),
             
             ftable<-as.data.frame(table(position),stringAsFactors=FALSE)
             ftable$Freq<-ftable$Freq/sum(ftable$Freq)
-            cat("Done.")
+            message("Done.")
             return(ftable)
           })
 

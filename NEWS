@@ -1,1 +1,8 @@
-Initial release of ssviz : small RNA-seq visualizer and analysis toolkit
+Version 0.99.2
+-------------------------------------------------------------------------
+* added pseudo option to getCountMatrix to handle bam files that do not have count information
+* changed outputs to "message" instead of "print"
+
+Version 0.99.1
+-------------------------------------------------------------------------
+* Initial release of ssviz : small RNA-seq visualizer and analysis toolkit

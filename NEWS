@@ -1,3 +1,7 @@
+Version 0.99.3
+-------------------------------------------------------------------------
+* changed pingpong to be more generic (instead of for just piRNAs)
+
 Version 0.99.2
 -------------------------------------------------------------------------
 * added pseudo option to getCountMatrix to handle bam files that do not have count information

@@ -148,7 +148,7 @@ setMethod("pingpong",signature=c(bam_file="DataFrame"),
                 toiterate<-round_any(nrow(pr)/10,10,f=floor)
               if(toiterate==0) toiterate<-1
               for(i in 1:nrow(pr)){
-                if(substr(sapply(as.list(pr[i,]$seq),toString),1,1)!="T") next
+                #if(substr(sapply(as.list(pr[i,]$seq),toString),1,1)!="T") next
                 if(i%%toiterate==1) message(paste("Forward read #",i,'out of',nrow(pr),"\n"))
                 locationp<-pr[i,]$pos
                 nr1<-nr[nr$pos<=(locationp) & nr$pos>=(locationp-maxposlength),]

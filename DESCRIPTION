@@ -1,0 +1,15 @@
+Package: ssviz
+Type: Package
+Title: A small RNA-seq visualizer and analysis toolkit
+Version: 1.0.0
+Date: 2014-07-15
+Author: Diana Low
+Maintainer: Diana Low <dlow@imcb.a-star.edu.sg>
+Description: Small RNA sequencing viewer
+License: GPL-2
+Depends: R (>=
+        2.15.1),methods,Rsamtools,Biostrings,reshape,ggplot2,RColorBrewer
+biocViews: Sequencing,RNASeq,Visualization,MultipleComparison,Genetics
+Collate: AllClasses.R AllGenerics.R helper.R
+VignetteBuilder: knitr
+Suggests: knitr

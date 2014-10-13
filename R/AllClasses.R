@@ -1,0 +1,1 @@
+setClassUnion("logicalORmissing",c("logical","missing"))
